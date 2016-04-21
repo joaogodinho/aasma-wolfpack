@@ -1,0 +1,27 @@
+to setup-turtles
+  ;; Default shapes for the turtles
+  set-default-shape wolves "wolf"
+  set-default-shape sheeps "sheep"
+  
+  ;; Generate random patches, not overlapping
+  let startingPos sort n-of 5 patches
+  
+  ;; Create wolves and sheep
+  ask item 0 startingPos [sprout-wolves 1 [set color brown]]
+  ask item 1 startingPos [sprout-wolves 1 [set color black]]
+  ask item 2 startingPos [sprout-wolves 1 [set color gray]]
+  ask item 3 startingPos [sprout-wolves 1 [set color white - 2.0]]
+  ask item 4 startingPos [sprout-sheeps 1 [set color white - 2.0]]
+end
+
+to setup-world
+  resize-world 0 world-size 0 world-size
+  ask patches [
+    ifelse (world-grid)
+      [ifelse (pxcor + pycor) mod 2 = 0
+        [set pcolor 9.9]
+        [set pcolor 9.8]
+      ]
+      [set pcolor 9.9]
+  ]
+end

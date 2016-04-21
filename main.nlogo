@@ -1,50 +1,23 @@
+__includes["setup.nls"]
+
 breed [ wolves wolf ]
 breed [ sheeps sheep ]
-
-to setup-turtles
-  create-wolves 4
-
-  ;;set wolf 1
-  ask turtle 0 [set color brown]
-  ask turtle 0 [set shape "wolf"]
-
-  ;;set wolf 2
-  ask turtle 1 [set color black]
-  ask turtle 1 [set shape "wolf"]
-
-  ;;set wolf 3
-  ask turtle 2 [set color white]
-  ask turtle 2 [set shape "wolf"]
-
-  ;;set wolf 4
-  ask turtle 3 [set color gray]
-  ask turtle 3 [set shape "wolf"]
-
-  create-sheeps 1
-
-  ;;set sheep
-  ask turtle 4 [set color white]
-  ask turtle 4 [set shape "sheep"]
-
-  ;;set turtles positions randomly
-  ask turtles [setxy random-xcor random-ycor]
-end
 
 to setup
   clear-all
   reset-ticks
+  setup-world
   setup-turtles
 end
-
 @#$#@#$#@
 GRAPHICS-WINDOW
-187
+210
 10
-892
-736
-16
-16
-21.061
+780
+601
+-1
+-1
+40.0
 1
 10
 1
@@ -54,21 +27,21 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
 0
+13
 0
+13
+1
+1
 1
 ticks
 30.0
 
 BUTTON
-23
-26
-86
-59
+12
+10
+79
+43
 NIL
 setup
 NIL
@@ -80,6 +53,32 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+13
+58
+185
+91
+world-size
+world-size
+6
+15
+13
+1
+1
+NIL
+HORIZONTAL
+
+SWITCH
+15
+104
+143
+137
+world-grid
+world-grid
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
