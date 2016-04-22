@@ -1,0 +1,10 @@
+to-report adjacent-positions
+  ifelse true
+  [ report sort neighbors4 ]
+  [ report sort neighbors ]
+end
+ 
+    
+  
+  
+  

@@ -1,4 +1,4 @@
-__includes["setup.nls"]
+__includes["setup.nls" "sheep.nls"]
 
 breed [ wolves wolf ]
 breed [ sheeps sheep ]
@@ -18,14 +18,24 @@ end
 
 to go
   tick
+  ask wolves [ wolf-loop ]
+  ask sheeps [ sheep-loop ]
   if ticks >= TICKS-LIMIT [stop]
+end
+
+to wolf-loop
+
+end
+
+to sheep-loop
+  let adj-pos adjacent-positions
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 405
 10
-855
-481
+695
+321
 -1
 -1
 40.0
@@ -35,13 +45,13 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 0
-10
+6
 0
-10
+6
 1
 1
 1
@@ -108,7 +118,7 @@ world-size
 world-size
 6
 15
-10
+6
 1
 1
 NIL
