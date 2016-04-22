@@ -3,18 +3,29 @@ __includes["setup.nls"]
 breed [ wolves wolf ]
 breed [ sheeps sheep ]
 
+;;; Global variables
+globals [GAME-OVER ]
+;;; Vars from Interface: WORLD-SIZE WORLD-GRID WOLVES-ARCH VISIBLE-RANGE WOLVES-ARCH SHEEP-ARCH
+;;;                      SHOW-RANGE TICKS-LIMIT
+
 to setup
   clear-all
   reset-ticks
+  setup-globals
   setup-world
   setup-turtles
 end
+
+to go
+  tick
+  if ticks >= TICKS-LIMIT [stop]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+405
 10
-780
-601
+855
+481
 -1
 -1
 40.0
@@ -28,9 +39,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-13
+10
 0
-13
+10
 1
 1
 1
@@ -38,9 +49,9 @@ ticks
 30.0
 
 BUTTON
-12
 10
-79
+10
+80
 43
 NIL
 setup
@@ -54,31 +65,126 @@ NIL
 NIL
 1
 
+BUTTON
+170
+10
+240
+43
+NIL
+go
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+90
+10
+160
+43
+NIL
+go
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
 SLIDER
-13
-58
-185
-91
+10
+55
+240
+88
 world-size
 world-size
 6
 15
-13
+10
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+10
+105
+240
+138
+visible-range
+visible-range
+0
+3
+1
 1
 1
 NIL
 HORIZONTAL
 
 SWITCH
-15
-104
-143
-137
+10
+375
+240
+408
 world-grid
 world-grid
+0
+1
+-1000
+
+CHOOSER
+10
+205
+240
+250
+wolves-arch
+wolves-arch
+"reactive" "deliberative" "learning"
+0
+
+CHOOSER
+10
+265
+240
+310
+sheep-arch
+sheep-arch
+"random" "reactive"
+0
+
+SWITCH
+10
+325
+240
+358
+show-range
+show-range
 1
 1
 -1000
+
+SLIDER
+10
+155
+240
+188
+ticks-limit
+ticks-limit
+100
+1000
+300
+100
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -441,5 +547,5 @@ Line -7500403 true 150 150 90 180
 Line -7500403 true 150 150 210 180
 
 @#$#@#$#@
-0
+1
 @#$#@#$#@

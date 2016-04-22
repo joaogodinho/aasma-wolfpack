@@ -15,7 +15,7 @@ to setup-turtles
 end
 
 to setup-world
-  resize-world 0 world-size 0 world-size
+  resize-world 0 WORLD-SIZE 0 WORLD-SIZE
   ask patches [
     ifelse (world-grid)
       [ifelse (pxcor + pycor) mod 2 = 0
@@ -24,4 +24,8 @@ to setup-world
       ]
       [set pcolor 9.9]
   ]
+end
+
+to setup-globals
+  set GAME-OVER false
 end
