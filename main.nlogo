@@ -1,4 +1,4 @@
-__includes["setup.nls" "sheep.nls"]
+__includes["setup.nls" "sensors.nls" "actuators.nls"]
 
 breed [ wolves wolf ]
 breed [ sheeps sheep ]
@@ -6,7 +6,7 @@ breed [ sheeps sheep ]
 ;;; Global variables
 globals [GAME-OVER ]
 ;;; Vars from Interface: WORLD-SIZE WORLD-GRID WOLVES-ARCH VISIBLE-RANGE WOLVES-ARCH SHEEP-ARCH
-;;;                      SHOW-RANGE TICKS-LIMIT
+;;;                      SHOW-RANGE TICKS-LIMIT SHEEP-MOVE-PROB
 
 to setup
   clear-all
@@ -28,14 +28,14 @@ to wolf-loop
 end
 
 to sheep-loop
-  let adj-pos adjacent-positions
+  sheep-move
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 405
 10
-695
-321
+855
+481
 -1
 -1
 40.0
@@ -45,13 +45,13 @@ GRAPHICS-WINDOW
 1
 1
 0
-0
-0
+1
+1
 1
 0
-6
+10
 0
-6
+10
 1
 1
 1
@@ -118,7 +118,7 @@ world-size
 world-size
 6
 15
-6
+10
 1
 1
 NIL
@@ -192,6 +192,21 @@ ticks-limit
 1000
 300
 100
+1
+NIL
+HORIZONTAL
+
+SLIDER
+10
+425
+240
+458
+sheep-move-prob
+sheep-move-prob
+0
+1
+0.8
+0.1
 1
 NIL
 HORIZONTAL

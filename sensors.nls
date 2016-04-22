@@ -1,4 +1,8 @@
-to-report adjacent-positions
+to-report sheep-adjacent-positions
+  report sort neighbors4
+end
+
+to-report wolf-adjacent-positions
   ifelse true
   [ report sort neighbors4 ]
   [ report sort neighbors ]
