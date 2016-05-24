@@ -6,6 +6,14 @@ to sheep-move
     ]
   ]
 end
+
+to wolf-move-adjacent [ target-patch ]
+  move-to target-patch
+end
+
+to wolf-move-random
+  wolf-move-adjacent one-of wolf-adjacent-positions
+end
  
     
   

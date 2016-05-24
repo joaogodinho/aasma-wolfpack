@@ -1,5 +1,5 @@
 to-report sheep-adjacent-positions
-  report sort neighbors4
+  report neighbors4
 end
 
 to-report sheep-surrounded
@@ -11,6 +11,24 @@ end
 
 to-report wolf-adjacent-positions
   ifelse WOLVES-DIAGONALS
-  [ report sort neighbors ]
-  [ report sort neighbors4 ]
+  [ report neighbors ]
+  [ report neighbors4 ]
+end
+
+to-report wolf-has-sheep-in-sight
+  let sheep-patch sheeps-on patches in-radius (VISIBLE-RANGE * sqrt(2))
+  if any? sheep-patch [
+    report [ patch-here ] of one-of sheep-patch
+  ] 
+  report false
+end
+
+to-report wolf-near-sheep
+  ifelse any? sheeps-on neighbors4
+  [ report true ]
+  [ report false ]
+end
+
+to-report free-patch? [ target-patch ]
+  report not any? turtles-on target-patch
 end

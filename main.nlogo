@@ -29,7 +29,17 @@ to go
 end
 
 to wolf-loop
-
+  if not wolf-near-sheep [
+    let temp wolf-has-sheep-in-sight
+    if temp != false
+    [ let temp2 find-closest-patch patch-here temp
+      if free-patch? temp2 [
+        wolf-move-adjacent temp2
+        stop
+      ]
+    ]
+    wolf-move-random
+  ]
 end
 
 to sheep-loop
@@ -37,6 +47,10 @@ to sheep-loop
   if sheep-surrounded [
     set GAME-OVER true
   ]
+end
+
+to-report find-closest-patch [ initialPos finalPos ]
+  report min-one-of wolf-adjacent-positions [ distance finalPos ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -53,8 +67,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 0
 10
@@ -141,7 +155,7 @@ visible-range
 visible-range
 1
 floor ((world-size - 1) / 2)
-1
+2
 1
 1
 NIL
@@ -202,7 +216,7 @@ sheep-move-prob
 sheep-move-prob
 0
 1
-0.8
+0
 0.1
 1
 NIL
