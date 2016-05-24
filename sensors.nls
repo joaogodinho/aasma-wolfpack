@@ -2,13 +2,15 @@ to-report sheep-adjacent-positions
   report sort neighbors4
 end
 
-to-report wolf-adjacent-positions
-  ifelse true
-  [ report sort neighbors4 ]
-  [ report sort neighbors ]
+to-report sheep-surrounded
+  if all? neighbors4 [ any? wolves-here ] [
+    report true
+  ]
+  report false
 end
- 
-    
-  
-  
-  
+
+to-report wolf-adjacent-positions
+  ifelse WOLVES-DIAGONALS
+  [ report sort neighbors ]
+  [ report sort neighbors4 ]
+end

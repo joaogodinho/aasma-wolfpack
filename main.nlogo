@@ -2,13 +2,17 @@ __includes["setup.nls" "sensors.nls" "actuators.nls"]
 
 breed [ wolves wolf ]
 breed [ sheeps sheep ]
+breed [ visualsqrs visualsqr ]
 
 ;;; Global variables
-globals [GAME-OVER ]
+globals [ GAME-OVER ]
 ;;; Vars from Interface: WORLD-SIZE WORLD-GRID WOLVES-ARCH VISIBLE-RANGE WOLVES-ARCH SHEEP-ARCH
-;;;                      SHOW-RANGE TICKS-LIMIT SHEEP-MOVE-PROB
+;;;                      SHOW-RANGE TICKS-LIMIT SHEEP-MOVE-PROB WOLVES-DIAGONALS
 
 to setup
+  ; Sprite for the visual field
+  set-default-shape visualsqrs "square thin"
+
   clear-all
   reset-ticks
   setup-globals
@@ -20,7 +24,8 @@ to go
   tick
   ask wolves [ wolf-loop ]
   ask sheeps [ sheep-loop ]
-  if ticks >= TICKS-LIMIT [stop]
+  if ticks >= TICKS-LIMIT [ stop ]
+  if GAME-OVER [ stop ]
 end
 
 to wolf-loop
@@ -29,6 +34,9 @@ end
 
 to sheep-loop
   sheep-move
+  if sheep-surrounded [
+    set GAME-OVER true
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -131,8 +139,8 @@ SLIDER
 138
 visible-range
 visible-range
-0
-3
+1
+floor ((world-size - 1) / 2)
 1
 1
 1
@@ -170,17 +178,6 @@ sheep-arch
 "random" "reactive"
 0
 
-SWITCH
-10
-325
-240
-358
-show-range
-show-range
-1
-1
--1000
-
 SLIDER
 10
 155
@@ -210,6 +207,28 @@ sheep-move-prob
 1
 NIL
 HORIZONTAL
+
+SWITCH
+10
+325
+240
+358
+show-range
+show-range
+0
+1
+-1000
+
+SWITCH
+10
+480
+240
+513
+wolves-diagonals
+wolves-diagonals
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -466,6 +485,11 @@ false
 0
 Rectangle -7500403 true true 30 30 270 270
 Rectangle -16777216 true false 60 60 240 240
+
+square thin
+false
+0
+Rectangle -7500403 false true 0 0 300 300
 
 star
 false

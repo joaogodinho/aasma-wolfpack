@@ -12,6 +12,11 @@ to setup-turtles
   ask item 2 startingPos [sprout-wolves 1 [set color gray]]
   ask item 3 startingPos [sprout-wolves 1 [set color white - 2.0]]
   ask item 4 startingPos [sprout-sheeps 1 [set color white - 2.0]]
+  if SHOW-RANGE [
+    ask wolves [
+      make-range-squares
+    ]
+  ]
 end
 
 to setup-world
@@ -28,4 +33,16 @@ end
 
 to setup-globals
   set GAME-OVER false
+end
+
+to make-range-squares
+  hatch-visualsqrs 1 [
+    set size 2 * VISIBLE-RANGE + 1
+    set color lput 64 extract-rgb color
+    __set-line-thickness 0.05
+    create-link-from myself [
+      tie
+      hide-link
+    ]
+  ]
 end

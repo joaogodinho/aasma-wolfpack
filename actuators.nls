@@ -1,9 +1,7 @@
 to sheep-move
-  if random-float 1 < SHEEP-MOVE-PROB
-  [
+  if random-float 1 < SHEEP-MOVE-PROB [
     let target-pos one-of sheep-adjacent-positions
-    if not any? wolves-on target-pos
-    [
+    if not any? wolves-on target-pos [
       move-to target-pos
     ]
   ]
