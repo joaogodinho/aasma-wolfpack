@@ -30,27 +30,32 @@ end
 
 to wolf-loop
   if not wolf-near-sheep [
+    let possiblePos wolf-adjacent-positions
     let temp wolf-has-sheep-in-sight
     if temp != false
-    [ let temp2 find-closest-patch patch-here temp
-      if free-patch? temp2 [
+    [ let temp2 find-closest-patch possiblePos temp
+      if is-patch? temp2
+      [
         wolf-move-adjacent temp2
         stop
       ]
     ]
-    wolf-move-random
+    wolf-move-adjacent one-of possiblePos
   ]
 end
 
 to sheep-loop
-  sheep-move
+  if random-float 1 < SHEEP-MOVE-PROB [
+    let possiblePos sheep-adjacent-positions
+    if any? possiblePos [ sheep-move-adjacent one-of possiblePos ]
+  ]
   if sheep-surrounded [
     set GAME-OVER true
   ]
 end
 
-to-report find-closest-patch [ initialPos finalPos ]
-  report min-one-of wolf-adjacent-positions [ distance finalPos ]
+to-report find-closest-patch [ possiblePos finalPos ]
+  report min-one-of possiblePos [ distance finalPos ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -67,8 +72,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-0
-0
+1
+1
 1
 0
 10
@@ -201,7 +206,7 @@ ticks-limit
 ticks-limit
 100
 1000
-300
+1000
 100
 1
 NIL
@@ -216,7 +221,7 @@ sheep-move-prob
 sheep-move-prob
 0
 1
-0
+1
 0.1
 1
 NIL

@@ -1,18 +1,23 @@
+;to-report sheep-adjacent-positions
+;  report neighbors4
+;end
+
 to-report sheep-adjacent-positions
-  report neighbors4
+  report neighbors4 with [ not any? turtles-on self ]
 end
 
 to-report sheep-surrounded
-  if all? neighbors4 [ any? wolves-here ] [
-    report true
-  ]
+  if all? neighbors4 [ any? wolves-here ]
+  [ report true ]
   report false
 end
 
 to-report wolf-adjacent-positions
+  let possiblePos 0
   ifelse WOLVES-DIAGONALS
-  [ report neighbors ]
-  [ report neighbors4 ]
+  [ set possiblePos neighbors ]
+  [ set possiblePos neighbors4 ]
+  report possiblePos with [ not any? turtles-on self ]
 end
 
 to-report wolf-has-sheep-in-sight
