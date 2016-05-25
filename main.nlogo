@@ -1,4 +1,4 @@
-__includes["setup.nls" "sensors.nls" "actuators.nls"]
+__includes["setup.nls" "sensors.nls" "actuators.nls" "wolves-reactive.nls"]
 
 breed [ wolves wolf ]
 breed [ sheeps sheep ]
@@ -29,18 +29,11 @@ to go
 end
 
 to wolf-loop
-  if not wolf-near-sheep [
-    let possiblePos wolf-adjacent-positions
-    let temp wolf-has-sheep-in-sight
-    if temp != false
-    [ let temp2 find-closest-patch possiblePos temp
-      if is-patch? temp2
-      [
-        wolf-move-adjacent temp2
-        stop
-      ]
-    ]
-    wolf-move-adjacent one-of possiblePos
+  ifelse WOLVES-ARCH = "reactive"
+  [ wolf-reactive-loop ]
+  [ ifelse WOLVES-ARCH = "deliberative"
+    [ wolf-deliberative-loop ]
+    [ wolf-learning-loop ]
   ]
 end
 
@@ -57,12 +50,18 @@ end
 to-report find-closest-patch [ possiblePos finalPos ]
   report min-one-of possiblePos [ distance finalPos ]
 end
+
+to wolf-deliberative-loop
+end
+
+to wolf-learning-loop
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 405
 10
-855
-481
+695
+321
 -1
 -1
 40.0
@@ -76,9 +75,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-10
+6
 0
-10
+6
 1
 1
 1
@@ -145,7 +144,7 @@ world-size
 world-size
 6
 15
-10
+6
 1
 1
 NIL

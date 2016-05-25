@@ -1,0 +1,15 @@
+to wolf-reactive-loop
+  if not wolf-near-sheep [
+    let possiblePos wolf-adjacent-positions
+    let temp wolf-has-sheep-in-sight
+    if temp != false
+    [ let temp2 find-closest-patch possiblePos temp
+      if is-patch? temp2
+      [
+        wolf-move-adjacent temp2
+        stop
+      ]
+    ]
+    wolf-move-adjacent one-of possiblePos
+  ]
+end
