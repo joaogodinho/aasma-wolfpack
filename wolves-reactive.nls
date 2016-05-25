@@ -1,5 +1,5 @@
 to wolf-reactive-loop
-  if not wolf-near-sheep [
+  if not wolf-near-sheep? [
     let possiblePos wolf-adjacent-positions
     let temp wolf-has-sheep-in-sight
     if temp != false

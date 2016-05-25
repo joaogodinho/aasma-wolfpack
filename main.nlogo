@@ -1,4 +1,4 @@
-__includes["setup.nls" "sensors.nls" "actuators.nls" "wolves-reactive.nls"]
+__includes[ "setup.nls" "sensors.nls" "actuators.nls" "wolves-reactive.nls" "wolves-deliberative.nls" "wolves-learning.nls" ]
 
 breed [ wolves wolf ]
 breed [ sheeps sheep ]
@@ -42,19 +42,13 @@ to sheep-loop
     let possiblePos sheep-adjacent-positions
     if any? possiblePos [ sheep-move-adjacent one-of possiblePos ]
   ]
-  if sheep-surrounded [
+  if sheep-surrounded? [
     set GAME-OVER true
   ]
 end
 
 to-report find-closest-patch [ possiblePos finalPos ]
   report min-one-of possiblePos [ distance finalPos ]
-end
-
-to wolf-deliberative-loop
-end
-
-to wolf-learning-loop
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
