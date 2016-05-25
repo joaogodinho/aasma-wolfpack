@@ -1,0 +1,128 @@
+to wolf-deliberative-loop
+  ifelse not (empty-plan? plan or intention-succeeded? intention)
+  [
+    execute-plan-action
+    update-beliefs
+  ]
+  [
+    update-beliefs
+    ;; Check the wolf's options
+    set desire BDI-options
+    set intention BDI-filter
+    set plan build-plan-for-intention intention
+
+    ;; If it could not build a plan, the wolf should behave as a reactive agent
+    if(empty-plan? plan)
+      [ wolf-loop ]
+  ]
+end
+
+to-report build-empty-plan
+  report []
+end
+
+to-report empty-plan? [pplan]
+  report empty? pplan
+end
+
+to-report intention-succeeded? [iintention]
+  let ddesire 0
+
+  if(empty-intention? iintention)
+    [ report false ]
+
+  set ddesire get-intention-desire iintention
+  if ddesire = "move-to-sheep"
+    [ report wolf-near-sheep? ]
+end
+
+to update-beliefs
+  let temp wolf-has-sheep-in-sight
+  if temp != false
+    [ set sheep-position temp ]
+end
+
+to execute-plan-action
+  let currentInstruction 0
+
+  set currentInstruction get-plan-first-instruction plan
+
+  ifelse(instruction-grab? currentInstruction)
+  [
+    if(cell-has-box? and ramp-cell? and not box-cargo?)
+      [grab-box]
+    set plan remove-plan-first-instruction plan
+  ]
+  [ ifelse(instruction-drop? currentInstruction)
+    [
+      if(shelf-cell? and not cell-has-box?) and (cell-color = cargo-box-color)
+        [ drop-box ]
+      set plan remove-plan-first-instruction plan
+    ]
+    [ ifelse(instruction-find-adjacent-position? currentInstruction)
+      [
+        ifelse(position-ahead = get-instruction-value currentInstruction)
+        [
+          ifelse(free-cell?)
+          [ move-ahead
+            set plan remove-plan-first-instruction plan ]
+          [ collided ]
+        ]
+        [ rotate-right ]
+      ]
+      [ if(instruction-find-heading? currentInstruction)
+        [
+          ifelse(heading = get-instruction-value currentInstruction)
+          [ set plan remove-plan-first-instruction plan ]
+          [ rotate-right ]
+        ]
+      ]
+    ]
+  ]
+end
+
+to-report get-plan-first-instruction [pplan]
+  report first pplan
+end
+
+to-report get-intention-position [iintention]
+  report item 0 iintention
+end
+
+to-report build-plan-for-intention [iintention]
+  let new-plan build-empty-plan
+
+  if not empty-intention? iintention
+  [ set new-plan build-path-plan current-position get-intention-position ]
+
+  report new-plan
+end
+
+to-report build-path-plan [posi posf]
+  let newPlan 0
+  let path 0
+
+  set newPlan build-empty-plan
+  set path (find-path posi posf)
+  foreach path
+    [ set newPlan add-instruction-to-plan newPlan build-instruction-find-adjacent-position ? ]
+
+  report newPlan
+end
+
+to-report add-instruction-to-plan [pplan iinstruction]
+  report lput iinstruction pplan
+end
+
+to-report build-instruction-find-adjacent-position [aadjacent-position]
+  report build-instruction "ad" aadjacent-position
+end
+
+to-report build-instruction [ttype vvalue]
+  report list ttype vvalue
+end
+
+
+
+
+

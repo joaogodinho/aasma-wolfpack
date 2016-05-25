@@ -6,7 +6,7 @@ to-report sheep-adjacent-positions
   report neighbors4 with [ not any? turtles-on self ]
 end
 
-to-report sheep-surrounded
+to-report sheep-surrounded?
   if all? neighbors4 [ any? wolves-here ]
   [ report true ]
   report false
@@ -28,7 +28,7 @@ to-report wolf-has-sheep-in-sight
   report false
 end
 
-to-report wolf-near-sheep
+to-report wolf-near-sheep?
   ifelse any? sheeps-on neighbors4
   [ report true ]
   [ report false ]
