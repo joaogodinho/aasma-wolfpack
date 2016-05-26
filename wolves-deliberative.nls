@@ -1,5 +1,6 @@
 to init-wolves
   set sheep-position false
+  set wolves-position nobody
   set msg-sheep-position false
   set desire false
   set intention build-empty-intention
@@ -7,11 +8,17 @@ to init-wolves
 end
 
 to wolf-deliberative-loop
-
-  ifelse not (empty-plan? plan or intention-succeeded? intention)
+  ifelse not (empty-plan? plan or intention-succeeded? intention or intention-impossible? intention)
   [   
     execute-plan-action
     update-beliefs
+    if reconsider
+    [ 
+      show "reconsidering..."
+      set desire BDI-options
+      set intention BDI-filter
+      set plan build-plan-for-intention intention
+    ]
   ]
   [
     update-beliefs
@@ -27,26 +34,60 @@ to wolf-deliberative-loop
     if sheep-position != false and wolves-in-sight != false
       [ 
         let msg list "sheep-position" sheep-position
-        show msg
         foreach sort wolves-in-sight [ send-message-to-wolf [ who ] of ? msg ] 
       ]
-  ]
+  ]  
+  show desire
+  show intention
+  show plan
 end
 
-to-report BDI-options
-  if wolf-near-sheep?
-    [ report false ]
-  if sheep-position != false
-    [ report "move-to-sheep" ]
-    
+to-report reconsider
+  if sheep-position != false and sheep-position != get-intention-sheep-position intention
+  [ report true ]
   report false
 end
 
+to-report BDI-options
+  if is-wolf-next-to-sheep or sheep-position = false
+    [ report false ]
+  
+  let possDesires (list
+    (list "move-to-sheep-left" patch [ pxcor - 1 ] of sheep-position [ pycor ] of sheep-position)
+    (list "move-to-sheep-right" patch [ pxcor + 1 ] of sheep-position [ pycor ] of sheep-position)
+    (list "move-to-sheep-above" patch [ pxcor ] of sheep-position [ pycor + 1 ] of sheep-position)
+    (list "move-to-sheep-down" patch [ pxcor ] of sheep-position [ pycor - 1 ] of sheep-position)
+    )
+  if sheep-position != false
+  [
+    foreach possDesires 
+    [
+      if wolves-position != nobody
+      [
+        if any? wolves-position with [ patch-here = item 1 ? ]
+        [
+          set possDesires remove ? possDesires
+        ]
+      ]
+    ]
+    let orderedDesires sort-by [ distance item 1 ?1 < distance item 1 ?2 ] possDesires
+    report item 0 first orderedDesires
+  ]
+end
+
 to-report BDI-filter
-  if desire != false
-    [ report sheep-position ]
-    
-  report build-empty-intention
+  if desire = false
+    [ report build-empty-intention ]
+
+  ifelse desire = "move-to-sheep-left"
+  [ report build-intention patch [ pxcor - 1 ] of sheep-position [ pycor ] of sheep-position sheep-position ]
+  [ ifelse desire = "move-to-sheep-right"
+    [ report build-intention patch [ pxcor + 1 ] of sheep-position [ pycor ] of sheep-position sheep-position ]
+    [ ifelse desire = "move-to-sheep-above"
+      [ report build-intention patch [ pxcor ] of sheep-position [ pycor + 1 ] of sheep-position sheep-position ]
+      [ report build-intention patch [ pxcor ] of sheep-position [ pycor - 1 ] of sheep-position sheep-position ]
+    ]
+  ]
 end
 
 to-report build-empty-plan
@@ -57,12 +98,28 @@ to-report empty-plan? [pplan]
   report empty? pplan
 end
 
+;
+; Intentions
+;
+
 to-report build-empty-intention
   report []
 end
 
+to-report build-intention [ ddesire pposition ]
+  report list ddesire pposition
+end
+
 to-report empty-intention? [iintention]
-  report not is-patch? iintention
+  report empty? iintention
+end
+
+to-report get-intention-sheep-position [iintention]
+  report item 1 iintention
+end
+
+to-report get-intention-position [iintention]
+  report item 0 iintention
 end
 
 to-report intention-succeeded? [iintention]
@@ -72,11 +129,25 @@ to-report intention-succeeded? [iintention]
   report patch-here = get-intention-position iintention
 end
 
+to-report intention-impossible? [iintention]
+  let intention-pos get-intention-position iintention
+  if wolves-position != nobody and any? wolves-position with [ patch-here = intention-pos ]
+    [ report true ]
+  report false
+end
+
 to update-beliefs
+  set is-wolf-next-to-sheep wolf-near-sheep?
   set sheep-position wolf-has-sheep-in-sight
-  if sheep-position = false and msg-sheep-position != false
-  [ set sheep-position msg-sheep-position ]
   
+  ; Update sheep position from messages
+  if sheep-position = false and msg-sheep-position != false [ set sheep-position msg-sheep-position ]
+  
+  ifelse wolves-in-sight != false
+  [ set wolves-position wolves-in-sight ]
+  [ set wolves-position nobody ]
+  
+  ; Reset the message
   set msg-sheep-position false
 end
 
@@ -95,10 +166,6 @@ to-report get-plan-first-instruction [pplan]
   report first pplan
 end
 
-to-report get-intention-position [iintention]
-  report iintention
-end
-
 to-report build-plan-for-intention [iintention]
   let new-plan build-empty-plan
 
@@ -109,6 +176,8 @@ to-report build-plan-for-intention [iintention]
 end
 
 to-report build-path-plan [adjpos posf]
+  show adjpos
+  show posf
   let newPlan 0
   let path 0
 
@@ -137,7 +206,8 @@ to-report find-path [PossiblePos FinalPos]
   set path lput find-closest-patch PossiblePos FinalPos path
   let currentPatch first path
   
-  while [ not member? currentPatch [ neighbors4 ] of FinalPos ]
+  if currentPatch = nobody [ report path ]
+  while [ currentPatch != FinalPos ]
   [
     ifelse WOLVES-DIAGONALS
     [ set currentPatch find-closest-patch [ neighbors ] of currentPatch FinalPos ]

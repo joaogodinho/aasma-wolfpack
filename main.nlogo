@@ -14,15 +14,17 @@ to setup
   set-default-shape visualsqrs "square thin"
 
   clear-all
-  reset-ticks
   setup-globals
   setup-world
   setup-turtles
   ask wolves [ init-wolves ]
+  reset-ticks
 end
 
 wolves-own [
   sheep-position
+  is-wolf-next-to-sheep
+  wolves-position
   msg-sheep-position
   desire
   intention
@@ -30,11 +32,11 @@ wolves-own [
 ]
 
 to go
-  tick
-  ask wolves [ wolf-loop ]
   ask sheeps [ sheep-loop ]
+  ask wolves [ wolf-loop ]
   if ticks >= TICKS-LIMIT [ stop ]
   if GAME-OVER [ stop ]
+  tick
 end
 
 to wolf-loop
@@ -61,13 +63,13 @@ to-report find-closest-patch [ possiblePos finalPos ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-270
+755
 10
-978
-739
+1161
+437
 -1
 -1
-63.5
+36.13
 1
 10
 1
@@ -162,7 +164,7 @@ visible-range
 visible-range
 1
 floor ((world-size - 1) / 2)
-2
+1
 1
 1
 NIL
@@ -208,7 +210,7 @@ ticks-limit
 ticks-limit
 100
 1000
-1000
+300
 100
 1
 NIL
@@ -223,7 +225,7 @@ sheep-move-prob
 sheep-move-prob
 0
 1
-0
+0.5
 0.1
 1
 NIL
@@ -250,6 +252,27 @@ wolves-diagonals
 0
 1
 -1000
+
+PLOT
+260
+10
+735
+235
+Distance to Sheep
+Ticks
+Distance
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"brown wolf" 1.0 0 -6459832 true "" "plot [ distance one-of sheeps ] of wolf 0"
+"black wolf" 1.0 0 -16777216 true "" "plot [ distance one-of sheeps ] of wolf 1"
+"gray wolf" 1.0 0 -7500403 true "" "plot [ distance one-of sheeps ] of wolf 2"
+"light gray wolf" 1.0 0 -3026479 true "" "plot [ distance one-of sheeps ] of wolf 3"
 
 @#$#@#$#@
 ## WHAT IS IT?
