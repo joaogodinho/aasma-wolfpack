@@ -28,6 +28,14 @@ to-report wolf-has-sheep-in-sight
   report false
 end
 
+to-report wolves-in-sight
+  let wolves-near other wolves-on patches in-radius (VISIBLE-RANGE * sqrt(2))
+  if any? wolves-near [
+    report wolves-near
+  ] 
+  report false
+end
+
 to-report wolf-near-sheep?
   ifelse any? sheeps-on neighbors4
   [ report true ]

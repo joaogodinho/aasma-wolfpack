@@ -1,6 +1,15 @@
+to init-wolves
+  set sheep-position false
+  set msg-sheep-position false
+  set desire false
+  set intention build-empty-intention
+  set plan build-empty-plan
+end
+
 to wolf-deliberative-loop
+
   ifelse not (empty-plan? plan or intention-succeeded? intention)
-  [
+  [   
     execute-plan-action
     update-beliefs
   ]
@@ -12,9 +21,32 @@ to wolf-deliberative-loop
     set plan build-plan-for-intention intention
 
     ;; If it could not build a plan, the wolf should behave as a reactive agent
-    if(empty-plan? plan)
-      [ wolf-loop ]
+    if empty-plan? plan
+      [ wolf-reactive-loop ]
+
+    if sheep-position != false and wolves-in-sight != false
+      [ 
+        let msg list "sheep-position" sheep-position
+        show msg
+        foreach sort wolves-in-sight [ send-message-to-wolf [ who ] of ? msg ] 
+      ]
   ]
+end
+
+to-report BDI-options
+  if wolf-near-sheep?
+    [ report false ]
+  if sheep-position != false
+    [ report "move-to-sheep" ]
+    
+  report false
+end
+
+to-report BDI-filter
+  if desire != false
+    [ report sheep-position ]
+    
+  report build-empty-intention
 end
 
 to-report build-empty-plan
@@ -25,21 +57,27 @@ to-report empty-plan? [pplan]
   report empty? pplan
 end
 
-to-report intention-succeeded? [iintention]
-  let ddesire 0
+to-report build-empty-intention
+  report []
+end
 
-  if(empty-intention? iintention)
+to-report empty-intention? [iintention]
+  report not is-patch? iintention
+end
+
+to-report intention-succeeded? [iintention]
+  if empty-intention? iintention
     [ report false ]
 
-  set ddesire get-intention-desire iintention
-  if ddesire = "move-to-sheep"
-    [ report wolf-near-sheep? ]
+  report patch-here = get-intention-position iintention
 end
 
 to update-beliefs
-  let temp wolf-has-sheep-in-sight
-  if temp != false
-    [ set sheep-position temp ]
+  set sheep-position wolf-has-sheep-in-sight
+  if sheep-position = false and msg-sheep-position != false
+  [ set sheep-position msg-sheep-position ]
+  
+  set msg-sheep-position false
 end
 
 to execute-plan-action
@@ -47,38 +85,10 @@ to execute-plan-action
 
   set currentInstruction get-plan-first-instruction plan
 
-  ifelse(instruction-grab? currentInstruction)
-  [
-    if(cell-has-box? and ramp-cell? and not box-cargo?)
-      [grab-box]
-    set plan remove-plan-first-instruction plan
-  ]
-  [ ifelse(instruction-drop? currentInstruction)
-    [
-      if(shelf-cell? and not cell-has-box?) and (cell-color = cargo-box-color)
-        [ drop-box ]
-      set plan remove-plan-first-instruction plan
-    ]
-    [ ifelse(instruction-find-adjacent-position? currentInstruction)
-      [
-        ifelse(position-ahead = get-instruction-value currentInstruction)
-        [
-          ifelse(free-cell?)
-          [ move-ahead
-            set plan remove-plan-first-instruction plan ]
-          [ collided ]
-        ]
-        [ rotate-right ]
-      ]
-      [ if(instruction-find-heading? currentInstruction)
-        [
-          ifelse(heading = get-instruction-value currentInstruction)
-          [ set plan remove-plan-first-instruction plan ]
-          [ rotate-right ]
-        ]
-      ]
-    ]
-  ]
+  ifelse free-patch? currentInstruction
+  [ wolf-move-adjacent currentInstruction
+    set plan remove-plan-first-instruction plan ]
+  [ set plan build-plan-for-intention intention ]
 end
 
 to-report get-plan-first-instruction [pplan]
@@ -86,26 +96,26 @@ to-report get-plan-first-instruction [pplan]
 end
 
 to-report get-intention-position [iintention]
-  report item 0 iintention
+  report iintention
 end
 
 to-report build-plan-for-intention [iintention]
   let new-plan build-empty-plan
 
   if not empty-intention? iintention
-  [ set new-plan build-path-plan current-position get-intention-position ]
+  [ set new-plan build-path-plan wolf-adjacent-positions get-intention-position iintention ]
 
   report new-plan
 end
 
-to-report build-path-plan [posi posf]
+to-report build-path-plan [adjpos posf]
   let newPlan 0
   let path 0
 
   set newPlan build-empty-plan
-  set path (find-path posi posf)
+  set path find-path adjpos posf
   foreach path
-    [ set newPlan add-instruction-to-plan newPlan build-instruction-find-adjacent-position ? ]
+    [ set newPlan add-instruction-to-plan newPlan build-instruction ? ]
 
   report newPlan
 end
@@ -114,14 +124,42 @@ to-report add-instruction-to-plan [pplan iinstruction]
   report lput iinstruction pplan
 end
 
-to-report build-instruction-find-adjacent-position [aadjacent-position]
-  report build-instruction "ad" aadjacent-position
+to-report build-instruction [vvalue]
+  report vvalue
 end
 
-to-report build-instruction [ttype vvalue]
-  report list ttype vvalue
+to-report remove-plan-first-instruction [pplan]
+  report butfirst pplan
 end
 
+to-report find-path [PossiblePos FinalPos]
+  let path [] 
+  set path lput find-closest-patch PossiblePos FinalPos path
+  let currentPatch first path
+  
+  while [ not member? currentPatch [ neighbors4 ] of FinalPos ]
+  [
+    ifelse WOLVES-DIAGONALS
+    [ set currentPatch find-closest-patch [ neighbors ] of currentPatch FinalPos ]
+    [ set currentPatch find-closest-patch [ neighbors4 ] of currentPatch FinalPos ]
+
+    set path lput currentPatch path
+  ]
+  
+  report path
+end
+
+to send-message-to-wolf [id-wolf msg]
+  ask wolf id-wolf [new-message msg]
+end
+
+to new-message [msg]
+  show msg
+  if item 0 msg = "sheep-position"
+  [
+    set msg-sheep-position item 1 msg
+  ]
+end
 
 
 

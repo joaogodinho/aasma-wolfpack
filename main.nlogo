@@ -18,7 +18,16 @@ to setup
   setup-globals
   setup-world
   setup-turtles
+  ask wolves [ init-wolves ]
 end
+
+wolves-own [
+  sheep-position
+  msg-sheep-position
+  desire
+  intention
+  plan
+]
 
 to go
   tick
@@ -52,13 +61,13 @@ to-report find-closest-patch [ possiblePos finalPos ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-405
+270
 10
-695
-321
+978
+739
 -1
 -1
-40.0
+63.5
 1
 10
 1
@@ -69,9 +78,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-6
+10
 0
-6
+10
 1
 1
 1
@@ -138,7 +147,7 @@ world-size
 world-size
 6
 15
-6
+10
 1
 1
 NIL
@@ -178,7 +187,7 @@ CHOOSER
 wolves-arch
 wolves-arch
 "reactive" "deliberative" "learning"
-0
+1
 
 CHOOSER
 10
@@ -214,7 +223,7 @@ sheep-move-prob
 sheep-move-prob
 0
 1
-1
+0
 0.1
 1
 NIL
@@ -238,7 +247,7 @@ SWITCH
 513
 wolves-diagonals
 wolves-diagonals
-1
+0
 1
 -1000
 
