@@ -1,21 +1,20 @@
-extensions [array]
+extensions [array table]
 
 breed [ wolves wolf ]
 breed [ sheeps sheep ]
 breed [ visualsqrs visualsqr ]
 
 ;;; Global variables
-globals [ GAME-OVER NUM-ACTIONS-SHEEP ACTION-LIST-SHEEP NUM-ACTIONS-WOLF ACTION-LIST-WOLF epsilon episode-count time-steps total-time-steps ]
-;;; Vars from Interface: WORLD-SIZE WORLD-GRID WOLVES-ARCH VISIBLE-RANGE WOLVES-ARCH SHEEP-ARCH
+globals [ GAME-OVER NUM-ACTIONS ACTION-LIST epsilon episode-count time-steps total-time-steps game-over-reward neutral-reward ]
+;;; Vars from Interface: WORLD-SIZE WORLD-GRID VISIBLE-RANGE
 ;;;                      SHOW-RANGE TICKS-LIMIT SHEEP-MOVE-PROB WOLVES-DIAGONALS
 
 wolves-own [
   Q-values
   reward
   total-reward
-  init-pos
-  prev-sheep-position
-  prev-partner-position
+  previous-xcor
+  previous-ycor
 ]
 
 to-report get-total-time-steps
@@ -56,6 +55,13 @@ to setup-turtles
       make-range-squares
     ]
   ]
+
+  ask wolves [
+    set total-reward 0
+    set reward 0
+    set previous-xcor xcor
+    set previous-ycor ycor
+  ]
 end
 
 to setup-world
@@ -87,21 +93,12 @@ to setup-globals
   set time-steps 0
   set episode-count 0
   set epsilon 1
+  set game-over-reward 1
+  set neutral-reward -0.1
   ;set temperature 100
 
-  set ACTION-LIST-SHEEP (list
-    list 0 0    ; no-move
-    list 0 1    ; N north
-    list 0 -1   ; S south
-    list 1 0    ; E east
-    list -1 0   ; W west
-    )
-
-  ; defines the number of available actions from above
-  set NUM-ACTIONS-SHEEP 5
-
   ; defines list of actions as (x y) move increments
-  set ACTION-LIST-WOLF (list
+  set ACTION-LIST (list
     list 0 0    ; no-move
     list 0 1    ; N north
     list 0 -1   ; S south
@@ -110,18 +107,18 @@ to setup-globals
     )
 
   ; defines the number of available actions from above
-  set NUM-ACTIONS-WOLF 5
+  set NUM-ACTIONS 5
 
   if WOLVES-DIAGONALS
   [
-    set ACTION-LIST-WOLF (list ACTION-LIST-WOLF
+    set ACTION-LIST (sentence ACTION-LIST (list
       list 1 1    ; NE northeast
       list 1 -1   ; SE southeast
       list -1 1   ; NW northwest
       list -1 -1  ; SW southwest
-      )
+      ))
 
-    set NUM-ACTIONS-WOLF 9;
+    set NUM-ACTIONS 9
   ]
 end
 
@@ -132,17 +129,90 @@ to go
     if episode-count >= max-episodes [stop]
   ]
   [
-    ask taxis [ agent-loop ]
+    ask wolves [ wolf-loop ]
+    set time-steps (time-steps + 1)
     set total-time-steps (total-time-steps + 1)
   ]
 end
 
-to-report episode-finished?
+to reset
+  ask wolves [
+    show reward
+    set reward 0
+    set-random-position
+    set previous-xcor xcor
+    set previous-ycor ycor
+  ]
 
+  set time-steps 0
+  set episode-count (episode-count + 1)
+  set epsilon max list 0 (1 - (episode-count / max-episodes))
+end
+
+to wolf-loop
+  ; chooses action
+  let action select-action xcor ycor
+  ; updates environmet
+  execute-action action
+
+  ; gets reward
+  set reward get-reward-iter0 action
+  set total-reward (total-reward + reward)
+
+  ; updates Q-value function
+  ; update-Q-value action
+end
+
+to-report select-action [ x y ]
+
+  ; checks dice against epsilon
+  ;let dice random-float 1
+  ;ifelse epsilon > dice [
+    ; return random action
+    report item (random NUM-ACTIONS) ACTION-LIST
+  ;]
+  ;[
+    ; return max action
+   ; let action-values array:to-list (get-Q-values x y)
+    ;report item (position (max action-values) action-values) ACTION-LIST
+  ;]
+end
+
+to execute-action [ action ]
+
+  ; stores previous position
+  set previous-xcor xcor
+  set previous-ycor ycor
+
+  ; sets position according to action move values for x and y (if possible)
+  let next-x xcor + first action
+  let next-y ycor + last action
+  if legal-move? next-x next-y [
+    set xcor next-x
+    set ycor next-y
+  ]
+
+  ; increases action count
+end
+
+to-report get-reward-iter0 [ action ]
+  if game-over? [ report game-over-reward ]
+  report neutral-reward
+end
+
+to-report legal-move? [ x y ]
+  report (x >= 0) and (y >= 0) and
+    (x <= max-pxcor) and (y <= max-pycor) and
+    (not any? sheeps-on patch x y)
+end
+
+
+to-report episode-finished?
+  report time-steps >= ticks-limit
 end
 
 to-report game-over?
-  let sheep-neighbors [ neighbors ] of one-of sheeps
+  let sheep-neighbors [ neighbors4 ] of one-of sheeps
   if all? sheep-neighbors [ any? wolves-here ]
   [
     report true
@@ -151,26 +221,47 @@ to-report game-over?
 end
 
 to-report get-initial-Q-values
-  report array:from-list n-values world-width [
-    array:from-list n-values world-height [
-      array:from-list n-values NUM-ACTIONS-WOLF [0]]]
+  let d VISIBLE-RANGE
+  let side (2 * d) + 1
+  let temp-table table:make
+  table:put temp-table 0 array:from-list n-values NUM-ACTIONS [ 0 ]
+  table:put temp-table 1 array:from-list n-values side [
+    array:from-list n-values side [
+      array:from-list n-values NUM-ACTIONS [ 0 ]
+    ]
+  ]
+  table:put temp-table 2 array:from-list n-values side [
+    array:from-list n-values side [
+      array:from-list n-values NUM-ACTIONS [ 0 ]
+    ]
+  ]
+  table:put temp-table 3 array:from-list n-values side [
+    array:from-list n-values side [
+      array:from-list n-values side [
+        array:from-list n-values side [
+          array:from-list n-values NUM-ACTIONS [ 0 ]
+        ]
+      ]
+    ]
+  ]
+  report temp-table
 end
 
 to set-random-position
   setxy random-pxcor random-pycor
-  while [any? other turtles-here] [
+  while [any? sheeps-on patch-here] [
     setxy random-pxcor random-pycor
   ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
-10
-794
-615
+725
+15
+1279
+590
 -1
 -1
-63.8
+49.82
 1
 10
 1
@@ -181,9 +272,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-8
+10
 0
-8
+10
 0
 0
 1
@@ -208,9 +299,9 @@ SLIDER
 138
 world-size
 world-size
-5
+3
 15
-8
+10
 1
 1
 NIL
@@ -219,7 +310,7 @@ HORIZONTAL
 SWITCH
 12
 155
-123
+182
 188
 world-grid
 world-grid
@@ -230,7 +321,7 @@ world-grid
 SLIDER
 11
 201
-183
+181
 234
 visible-range
 visible-range
@@ -245,18 +336,18 @@ HORIZONTAL
 SWITCH
 10
 251
-160
+180
 284
 wolves-diagonals
 wolves-diagonals
-1
+0
 1
 -1000
 
 BUTTON
-63
 15
-126
+15
+78
 48
 NIL
 setup
@@ -269,6 +360,70 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+10
+300
+180
+333
+ticks-limit
+ticks-limit
+500
+5000
+1500
+500
+1
+NIL
+HORIZONTAL
+
+SLIDER
+10
+350
+180
+383
+max-episodes
+max-episodes
+500
+5000
+5000
+500
+1
+NIL
+HORIZONTAL
+
+BUTTON
+95
+15
+158
+48
+go
+go
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+0
+
+BUTTON
+175
+15
+238
+48
+NIL
+go
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+0
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -636,5 +791,5 @@ Line -7500403 true 150 150 90 180
 Line -7500403 true 150 150 210 180
 
 @#$#@#$#@
-0
+1
 @#$#@#$#@
