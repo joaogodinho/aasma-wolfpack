@@ -1,4 +1,4 @@
-__includes[ "setup.nls" "sensors.nls" "actuators.nls" "wolves-reactive.nls" "wolves-deliberative.nls" "wolves-learning.nls" ]
+__includes[ "setup.nls" "sensors.nls" "actuators.nls" "wolves-reactive.nls" "wolves-deliberative.nls" ]
 
 breed [ wolves wolf ]
 breed [ sheeps sheep ]
@@ -42,10 +42,7 @@ end
 to wolf-loop
   ifelse WOLVES-ARCH = "reactive"
   [ wolf-reactive-loop ]
-  [ ifelse WOLVES-ARCH = "deliberative"
-    [ wolf-deliberative-loop ]
-    [ wolf-learning-loop ]
-  ]
+  [ wolf-deliberative-loop ]
 end
 
 to sheep-loop
@@ -65,8 +62,8 @@ end
 GRAPHICS-WINDOW
 755
 10
-1161
-437
+1342
+618
 -1
 -1
 36.13
@@ -80,9 +77,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-10
+15
 0
-10
+15
 1
 1
 1
@@ -149,7 +146,7 @@ world-size
 world-size
 6
 15
-10
+15
 1
 1
 NIL
@@ -164,7 +161,7 @@ visible-range
 visible-range
 1
 floor ((world-size - 1) / 2)
-1
+3
 1
 1
 NIL
@@ -188,7 +185,7 @@ CHOOSER
 250
 wolves-arch
 wolves-arch
-"reactive" "deliberative" "learning"
+"reactive" "deliberative"
 1
 
 CHOOSER
@@ -225,7 +222,7 @@ sheep-move-prob
 sheep-move-prob
 0
 1
-0.5
+1
 0.1
 1
 NIL
