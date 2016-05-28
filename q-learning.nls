@@ -38,78 +38,97 @@ to-report get-Q-values-simple [ q-table ]
 end
 
 to-report get-Q-values-sheep [ q-table sheep-x sheep-y ]
-  show "Sheep in array"
-  show sheep-x
-  show sheep-y
-  show array:item (array:item (table:get q-table 1) sheep-x) sheep-y
   report array:item (array:item (table:get q-table 1) sheep-x) sheep-y
 end
 
-to-report get-Q-values-sheep-wolf [ q-table sheep-x sheep-y wolf-x wolf-y ]
-  report array:item (array:item (array:item (array:item (table:get q-table 2) sheep-x) sheep-y) wolf-x) wolf-y
+to-report get-Q-values-wolf [ q-table wolf-x wolf-y ]
+  report array:item (array:item (table:get q-table 2) wolf-x) wolf-y
 end
 
-to-report get-Q-values [ sheep-pos wolves-pos ]
+to-report get-Q-values-sheep-wolf [ q-table sheep-x sheep-y wolf-x wolf-y ]
+  report array:item (array:item (array:item (array:item (table:get q-table 3) sheep-x) sheep-y) wolf-x) wolf-y
+end
+
+to-report get-Q-values [ pos sheep-pos wolves-pos ]
   ifelse sheep-pos = false and wolves-pos = false
   [
     report get-Q-values-simple Q-values1
   ]
   [
-    let diff [ pxcor ] of sheep-pos - xcor
-    let sheep-x abs diff
-    if sheep-x > WORLD-SIZE / 2 [ set sheep-x WORLD-SIZE - sheep-x ]
-    if diff < 0 [ set sheep-x sheep-x * -1 ]
-    set diff [ pycor ] of sheep-pos - ycor
-    let sheep-y abs diff
-    if sheep-y > WORLD-SIZE / 2 [ set sheep-y WORLD-SIZE - sheep-y ]
-    if diff > 0 [ set sheep-y sheep-y * -1 ]
     ifelse is-patch? sheep-pos and wolves-pos = false
     [
-      show "Sheep offset"
-      show sheep-x
-      show sheep-y
+      let diff [ pxcor ] of sheep-pos - [ pxcor ] of pos
+      let sheep-x abs diff
+      if sheep-x > WORLD-SIZE / 2 [ set sheep-x WORLD-SIZE - sheep-x ]
+      if diff < 0 [ set sheep-x sheep-x * -1 ]
+      set diff [ pycor ] of sheep-pos - [ pycor ] of pos
+      let sheep-y abs diff
+      if sheep-y > WORLD-SIZE / 2 [ set sheep-y WORLD-SIZE - sheep-y ]
+      if diff > 0 [ set sheep-y sheep-y * -1 ]
       report get-Q-values-sheep Q-values1 (sheep-x + VISIBLE-RANGE) (sheep-y + VISIBLE-RANGE)
     ]
     [
-      set diff [ pxcor ] of one-of wolves-pos - xcor
-      let wolf-x abs diff
-      if wolf-x > WORLD-SIZE / 2 [ set wolf-x WORLD-SIZE - wolf-x ]
-      if diff < 0 [ set wolf-x wolf-x * -1 ]
-      set diff [ pycor ] of one-of wolves-pos - ycor
-      let wolf-y abs diff
-      if wolf-y > WORLD-SIZE / 2 [ set wolf-y WORLD-SIZE - wolf-y ]
-      if diff > 0 [ set wolf-y wolf-y * -1 ]
-      report get-Q-values-sheep-wolf Q-values1 (sheep-x + VISIBLE-RANGE) (sheep-y + VISIBLE-RANGE) (wolf-x + VISIBLE-RANGE) (wolf-y + VISIBLE-RANGE)
+      ifelse wolves-pos != false and sheep-pos = false
+      [
+        set wolves-pos [ patch-here ] of one-of wolves-pos
+        let diff [ pxcor ] of wolves-pos - [ pxcor ] of pos
+        let wolf-x abs diff
+        if wolf-x > WORLD-SIZE / 2 [ set wolf-x WORLD-SIZE - wolf-x ]
+        if diff < 0 [ set wolf-x wolf-x * -1 ]
+        set diff [ pycor ] of wolves-pos - [ pycor ] of pos
+        let wolf-y abs diff
+        if wolf-y > WORLD-SIZE / 2 [ set wolf-y WORLD-SIZE - wolf-y ]
+        if diff > 0 [ set wolf-y wolf-y * -1 ]
+        report get-Q-values-wolf Q-values1 (wolf-x + VISIBLE-RANGE) (wolf-y + VISIBLE-RANGE)
+      ]
+      [
+        set wolves-pos [ patch-here ] of one-of wolves-pos
+        let diff [ pxcor ] of sheep-pos - [ pxcor ] of pos
+        let sheep-x abs diff
+        if sheep-x > WORLD-SIZE / 2 [ set sheep-x WORLD-SIZE - sheep-x ]
+        if diff < 0 [ set sheep-x sheep-x * -1 ]
+        set diff [ pycor ] of sheep-pos - [ pycor ] of pos
+        let sheep-y abs diff
+        if sheep-y > WORLD-SIZE / 2 [ set sheep-y WORLD-SIZE - sheep-y ]
+        if diff > 0 [ set sheep-y sheep-y * -1 ]
+        set diff [ pxcor ] of wolves-pos - [ pxcor ] of pos
+        let wolf-x abs diff
+        if wolf-x > WORLD-SIZE / 2 [ set wolf-x WORLD-SIZE - wolf-x ]
+        if diff < 0 [ set wolf-x wolf-x * -1 ]
+        set diff [ pycor ] of wolves-pos - [ pycor ] of pos
+        let wolf-y abs diff
+        if wolf-y > WORLD-SIZE / 2 [ set wolf-y WORLD-SIZE - wolf-y ]
+        if diff > 0 [ set wolf-y wolf-y * -1 ]
+        report get-Q-values-sheep-wolf Q-values1 (sheep-x + VISIBLE-RANGE) (sheep-y + VISIBLE-RANGE) (wolf-x + VISIBLE-RANGE) (wolf-y + VISIBLE-RANGE)
+      ]
     ]
   ]
 end
 
-to-report get-max-Q-value [ sheep-pos wolf-pos ]
-    report max array:to-list get-Q-values sheep-pos wolf-pos
+to-report get-max-Q-value [ pos sheep-pos wolf-pos ]
+    report max array:to-list get-Q-values pos sheep-pos wolf-pos
 end
 
-to-report get-Q-value [ sheep-pos wolf-pos action ]
-  let q-values get-Q-values sheep-pos wolf-pos
+to-report get-Q-value [ pos sheep-pos wolf-pos action ]
+  let q-values get-Q-values pos sheep-pos wolf-pos
   report array:item q-values get-action-index action
 end
 
-to set-Q-value [sheep-pos wolf-pos action value]
-  show get-Q-values sheep-pos wolf-pos
-  array:set (get-Q-values sheep-pos wolf-pos) (get-action-index action) value
-  show get-Q-values sheep-pos wolf-pos
+to set-Q-value [ pos sheep-pos wolf-pos action value ]
+  array:set (get-Q-values pos sheep-pos wolf-pos) (get-action-index action) value
 end
 
 to update-Q-value [ action ]
 
   ; get previous Q-value
-  let previous-Q-value (get-Q-value previous-sheep-pos previous-wolf-pos action)
+  let previous-Q-value (get-Q-value previous-pos previous-sheep-pos previous-wolf-pos action)
 
   ; gets r + (lambda * max_a' Q(s',a')) - Q(s,a)
-  let prediction-error (reward + (discount-factor * get-max-Q-value wolf-has-sheep-in-sight wolves-in-sight) - previous-Q-value)
+  let prediction-error (reward + (discount-factor * get-max-Q-value patch-here wolf-has-sheep-in-sight wolves-in-sight) - previous-Q-value)
 
   ; gets Q(s,a) + (alpha * (r + (lambda * max_a' Q(s',a') - Q(s,a)))
   let new-Q-value (previous-Q-value + (learning-rate * prediction-error))
 
   ; sets new Q-value
-  set-Q-value previous-sheep-pos previous-wolf-pos action new-Q-value
+  set-Q-value previous-pos previous-sheep-pos previous-wolf-pos action new-Q-value
 end

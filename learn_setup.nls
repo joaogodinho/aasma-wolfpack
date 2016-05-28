@@ -19,7 +19,7 @@ to setup-turtles
 
   ;; Create wolves and sheep
   ask item 0 startingPos [sprout-wolves 1 [set color brown]]
-;  ask item 1 startingPos [sprout-wolves 1 [set color black]]
+  ask item 1 startingPos [sprout-wolves 1 [set color black]]
 ;  ask item 2 startingPos [sprout-wolves 1 [set color gray]]
 ;  ask item 3 startingPos [sprout-wolves 1 [set color white - 2.0]]
   ask item 4 startingPos [sprout-sheeps 1 [set color white - 2.0]]

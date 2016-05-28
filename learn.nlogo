@@ -1,4 +1,4 @@
-__includes [ "learn_setup.nls" "q-learning.nls" "sensors.nls" ]
+__includes [ "learn_setup.nls" "q-learning.nls" "sensors.nls" "actuators.nls" ]
 
 extensions [array table]
 
@@ -19,33 +19,45 @@ wolves-own [
   total-reward
   previous-sheep-pos
   previous-wolf-pos
+  previous-pos
 ]
 
 to go
+  ask wolves [ wolf-loop ]
+  ; ask sheeps [ sheep-loop ]
+  ; Time steps in current episode
+  set time-steps (time-steps + 1)
+  ; Total sum of time-steps
+  set total-time-steps (total-time-steps + 1)
   ; if episode is finished starts new episode, otherwise ask each agent to update
-  ifelse episode-finished? [
+  if episode-finished?
+  [
     reset
     if episode-count >= max-episodes [ stop ]
   ]
-  [
-    ask wolves [ wolf-loop ]
-    ; Time steps in current episode
-    set time-steps (time-steps + 1)
-    ; Total sum of time-steps
-    set total-time-steps (total-time-steps + 1)
-  ]
 end
 
+to sheep-loop
+  let possiblePos sheep-adjacent-positions
+  if any? possiblePos [ sheep-move-adjacent one-of possiblePos ]
+end
+
+
 to reset
-  show "Resetting map"
+  ask sheeps [ setxy random-pxcor random-pycor ]
   ask wolves [
     set reward 0
     set-random-position
+    set previous-pos patch-here
     set previous-sheep-pos wolf-has-sheep-in-sight
     ifelse wolves-in-sight != false
-    [ set previous-wolf-pos one-of wolves-in-sight ]
+    [ set previous-wolf-pos wolves-in-sight ]
     [ set previous-wolf-pos false ]
   ]
+
+  set-current-plot "Time performance"
+  set-current-plot-pen "time-steps"
+  plot time-steps
 
   set time-steps 0
   set episode-count (episode-count + 1)
@@ -55,7 +67,7 @@ end
 to wolf-loop
   ; chooses action using the modular approach
   let action select-action wolf-has-sheep-in-sight wolves-in-sight
-  ; updates environmet
+  ;show get-Q-values patch-here wolf-has-sheep-in-sight wolves-in-sight
   execute-action action
 
   ; gets reward
@@ -67,36 +79,28 @@ to wolf-loop
 end
 
 to-report select-action [ sheep-pos wolves-pos ]
-  let action-values array:to-list get-Q-values sheep-pos wolves-pos
-  ;show action-values
-  report select-max-action action-values
+  let dice random-float 1
+  ifelse epsilon > dice
+  [
+    report item (random NUM-ACTIONS) ACTION-LIST
+  ]
+  [
+    let action-values array:to-list get-Q-values patch-here sheep-pos wolves-pos
+    ;show action-values
+    report select-max-action action-values
+  ]
 end
 
 to-report select-max-action [ action-values ]
   report item (position (max action-values) action-values) ACTION-LIST
 end
 
-;to-report select-action [ x y ]
-;
-;  ; checks dice against epsilon
-;  ;let dice random-float 1
-;  ;ifelse epsilon > dice [
-;    ; return random action
-;    report item (random NUM-ACTIONS) ACTION-LIST
-;  ;]
-;  ;[
-;    ; return max action
-;   ; let action-values array:to-list (get-Q-values x y)
-;    ;report item (position (max action-values) action-values) ACTION-LIST
-;  ;]
-;end
-
 to execute-action [ action ]
-
-  ; stores previous sheep and wolf position
+  ; stores previous pos, sheep and wolf position
+  set previous-pos patch-here
   set previous-sheep-pos wolf-has-sheep-in-sight
   ifelse wolves-in-sight != false
-  [ set previous-wolf-pos one-of wolves-in-sight ]
+  [ set previous-wolf-pos wolves-in-sight ]
   [ set previous-wolf-pos false ]
 
   ; sets position according to action move values for x and y (if possible)
@@ -114,18 +118,20 @@ to-report get-reward-iter0 [ action ]
 end
 
 to-report legal-move? [ x y ]
-  report (x >= 0) and (y >= 0) and
-    (x <= max-pxcor) and (y <= max-pycor) and
-    (not any? sheeps-on patch x y)
+;  report (x >= 0) and (y >= 0) and
+;    (x <= max-pxcor) and (y <= max-pycor) and
+;    (not any? sheeps-on patch x y)
+  report not any? sheeps-on patch x y
 end
 
 to-report episode-finished?
-  report time-steps >= ticks-limit
+  report time-steps >= ticks-limit or game-over?
 end
 
 to-report game-over?
   let sheep-neighbors [ neighbors4 ] of one-of sheeps
-  if all? sheep-neighbors [ any? wolves-here ]
+  ;if all? sheep-neighbors [ any? wolves-here ]
+  if count wolves-on sheep-neighbors = 2
   [
     report true
   ]
@@ -281,8 +287,8 @@ SLIDER
 max-episodes
 max-episodes
 500
-5000
-5000
+10000
+10000
 500
 1
 NIL
@@ -331,7 +337,7 @@ discount-factor
 discount-factor
 0
 1
-0.99
+0.9
 0.01
 1
 NIL
@@ -346,11 +352,29 @@ learning-rate
 learning-rate
 0
 1
-0.9
+0.1
 0.1
 1
 NIL
 HORIZONTAL
+
+PLOT
+250
+15
+710
+235
+Time performance
+episode
+time-steps / moves
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"time-steps" 1.0 0 -16777216 true "" ""
 
 @#$#@#$#@
 ## WHAT IS IT?
