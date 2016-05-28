@@ -1,3 +1,5 @@
+__includes [ "learn_setup.nls" "q-learning.nls" "sensors.nls" ]
+
 extensions [array table]
 
 breed [ wolves wolf ]
@@ -7,141 +9,42 @@ breed [ visualsqrs visualsqr ]
 ;;; Global variables
 globals [ GAME-OVER NUM-ACTIONS ACTION-LIST epsilon episode-count time-steps total-time-steps game-over-reward neutral-reward ]
 ;;; Vars from Interface: WORLD-SIZE WORLD-GRID VISIBLE-RANGE
-;;;                      SHOW-RANGE TICKS-LIMIT SHEEP-MOVE-PROB WOLVES-DIAGONALS
+;;;                      SHOW-RANGE TICKS-LIMIT WOLVES-DIAGONALS
 
 wolves-own [
-  Q-values
+  Q-values1
+  Q-values2
+  Q-values3
   reward
   total-reward
-  previous-xcor
-  previous-ycor
+  previous-sheep-pos
+  previous-wolf-pos
 ]
-
-to-report get-total-time-steps
-  report total-time-steps
-end
-
-to-report get-episode-count
-  report episode-count
-end
-
-to setup
-  ; Sprite for the visual field
-  set-default-shape visualsqrs "square thin"
-
-  clear-all
-  setup-globals
-  setup-world
-  setup-turtles
-  reset-ticks
-end
-
-to setup-turtles
-  ;; Default shapes for the turtles
-  set-default-shape wolves "wolf"
-  set-default-shape sheeps "sheep"
-
-  ;; Generate random patches, not overlapping
-  let startingPos sort n-of 5 patches
-
-  ;; Create wolves and sheep
-  ask item 0 startingPos [sprout-wolves 1 [set color brown]]
-  ask item 1 startingPos [sprout-wolves 1 [set color black]]
-  ask item 2 startingPos [sprout-wolves 1 [set color gray]]
-  ask item 3 startingPos [sprout-wolves 1 [set color white - 2.0]]
-  ask item 4 startingPos [sprout-sheeps 1 [set color white - 2.0]]
-  if SHOW-RANGE [
-    ask wolves [
-      make-range-squares
-    ]
-  ]
-
-  ask wolves [
-    set total-reward 0
-    set reward 0
-    set previous-xcor xcor
-    set previous-ycor ycor
-  ]
-end
-
-to setup-world
-  resize-world 0 WORLD-SIZE 0 WORLD-SIZE
-  ask patches [
-    ifelse (world-grid)
-      [ifelse (pxcor + pycor) mod 2 = 0
-        [set pcolor 9.9]
-        [set pcolor 9.8]
-      ]
-      [set pcolor 9.9]
-  ]
-end
-
-to make-range-squares
-  hatch-visualsqrs 1 [
-    set size 2 * VISIBLE-RANGE + 1
-    set color lput 64 extract-rgb color
-    __set-line-thickness 0.05
-    create-link-from myself [
-      tie
-      hide-link
-    ]
-  ]
-end
-
-to setup-globals
-  set GAME-OVER false
-  set time-steps 0
-  set episode-count 0
-  set epsilon 1
-  set game-over-reward 1
-  set neutral-reward -0.1
-  ;set temperature 100
-
-  ; defines list of actions as (x y) move increments
-  set ACTION-LIST (list
-    list 0 0    ; no-move
-    list 0 1    ; N north
-    list 0 -1   ; S south
-    list 1 0    ; E east
-    list -1 0   ; W west
-    )
-
-  ; defines the number of available actions from above
-  set NUM-ACTIONS 5
-
-  if WOLVES-DIAGONALS
-  [
-    set ACTION-LIST (sentence ACTION-LIST (list
-      list 1 1    ; NE northeast
-      list 1 -1   ; SE southeast
-      list -1 1   ; NW northwest
-      list -1 -1  ; SW southwest
-      ))
-
-    set NUM-ACTIONS 9
-  ]
-end
 
 to go
   ; if episode is finished starts new episode, otherwise ask each agent to update
   ifelse episode-finished? [
     reset
-    if episode-count >= max-episodes [stop]
+    if episode-count >= max-episodes [ stop ]
   ]
   [
     ask wolves [ wolf-loop ]
+    ; Time steps in current episode
     set time-steps (time-steps + 1)
+    ; Total sum of time-steps
     set total-time-steps (total-time-steps + 1)
   ]
 end
 
 to reset
+  show "Resetting map"
   ask wolves [
-    show reward
     set reward 0
     set-random-position
-    set previous-xcor xcor
-    set previous-ycor ycor
+    set previous-sheep-pos wolf-has-sheep-in-sight
+    ifelse wolves-in-sight != false
+    [ set previous-wolf-pos one-of wolves-in-sight ]
+    [ set previous-wolf-pos false ]
   ]
 
   set time-steps 0
@@ -150,8 +53,8 @@ to reset
 end
 
 to wolf-loop
-  ; chooses action
-  let action select-action xcor ycor
+  ; chooses action using the modular approach
+  let action select-action wolf-has-sheep-in-sight wolves-in-sight
   ; updates environmet
   execute-action action
 
@@ -160,29 +63,41 @@ to wolf-loop
   set total-reward (total-reward + reward)
 
   ; updates Q-value function
-  ; update-Q-value action
+  update-Q-value action
 end
 
-to-report select-action [ x y ]
-
-  ; checks dice against epsilon
-  ;let dice random-float 1
-  ;ifelse epsilon > dice [
-    ; return random action
-    report item (random NUM-ACTIONS) ACTION-LIST
-  ;]
-  ;[
-    ; return max action
-   ; let action-values array:to-list (get-Q-values x y)
-    ;report item (position (max action-values) action-values) ACTION-LIST
-  ;]
+to-report select-action [ sheep-pos wolves-pos ]
+  let action-values array:to-list get-Q-values sheep-pos wolves-pos
+  ;show action-values
+  report select-max-action action-values
 end
+
+to-report select-max-action [ action-values ]
+  report item (position (max action-values) action-values) ACTION-LIST
+end
+
+;to-report select-action [ x y ]
+;
+;  ; checks dice against epsilon
+;  ;let dice random-float 1
+;  ;ifelse epsilon > dice [
+;    ; return random action
+;    report item (random NUM-ACTIONS) ACTION-LIST
+;  ;]
+;  ;[
+;    ; return max action
+;   ; let action-values array:to-list (get-Q-values x y)
+;    ;report item (position (max action-values) action-values) ACTION-LIST
+;  ;]
+;end
 
 to execute-action [ action ]
 
-  ; stores previous position
-  set previous-xcor xcor
-  set previous-ycor ycor
+  ; stores previous sheep and wolf position
+  set previous-sheep-pos wolf-has-sheep-in-sight
+  ifelse wolves-in-sight != false
+  [ set previous-wolf-pos one-of wolves-in-sight ]
+  [ set previous-wolf-pos false ]
 
   ; sets position according to action move values for x and y (if possible)
   let next-x xcor + first action
@@ -191,8 +106,6 @@ to execute-action [ action ]
     set xcor next-x
     set ycor next-y
   ]
-
-  ; increases action count
 end
 
 to-report get-reward-iter0 [ action ]
@@ -205,7 +118,6 @@ to-report legal-move? [ x y ]
     (x <= max-pxcor) and (y <= max-pycor) and
     (not any? sheeps-on patch x y)
 end
-
 
 to-report episode-finished?
   report time-steps >= ticks-limit
@@ -220,45 +132,30 @@ to-report game-over?
   report false
 end
 
-to-report get-initial-Q-values
-  let d VISIBLE-RANGE
-  let side (2 * d) + 1
-  let temp-table table:make
-  table:put temp-table 0 array:from-list n-values NUM-ACTIONS [ 0 ]
-  table:put temp-table 1 array:from-list n-values side [
-    array:from-list n-values side [
-      array:from-list n-values NUM-ACTIONS [ 0 ]
-    ]
-  ]
-  table:put temp-table 2 array:from-list n-values side [
-    array:from-list n-values side [
-      array:from-list n-values NUM-ACTIONS [ 0 ]
-    ]
-  ]
-  table:put temp-table 3 array:from-list n-values side [
-    array:from-list n-values side [
-      array:from-list n-values side [
-        array:from-list n-values side [
-          array:from-list n-values NUM-ACTIONS [ 0 ]
-        ]
-      ]
-    ]
-  ]
-  report temp-table
-end
-
 to set-random-position
   setxy random-pxcor random-pycor
   while [any? sheeps-on patch-here] [
     setxy random-pxcor random-pycor
   ]
 end
+
+to-report get-total-time-steps
+  report total-time-steps
+end
+
+to-report get-episode-count
+  report episode-count
+end
+
+to-report get-action-index [ action ]
+  report position action ACTION-LIST
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 725
 15
-1279
-590
+1233
+544
 -1
 -1
 49.82
@@ -272,9 +169,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-10
+9
 0
-10
+9
 0
 0
 1
@@ -284,7 +181,7 @@ ticks
 SWITCH
 13
 60
-134
+183
 93
 show-range
 show-range
@@ -327,7 +224,7 @@ visible-range
 visible-range
 1
 3
-1
+2
 1
 1
 NIL
@@ -424,6 +321,36 @@ NIL
 NIL
 NIL
 0
+
+SLIDER
+10
+400
+182
+433
+discount-factor
+discount-factor
+0
+1
+0.99
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+10
+450
+182
+483
+learning-rate
+learning-rate
+0
+1
+0.9
+0.1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?

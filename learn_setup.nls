@@ -1,0 +1,97 @@
+to setup
+  ; Sprite for the visual field
+  set-default-shape visualsqrs "square thin"
+
+  clear-all
+  setup-globals
+  setup-world
+  setup-turtles
+  reset-ticks
+end
+
+to setup-turtles
+  ;; Default shapes for the turtles
+  set-default-shape wolves "wolf"
+  set-default-shape sheeps "sheep"
+
+  ;; Generate random patches, not overlapping
+  let startingPos sort n-of 5 patches
+
+  ;; Create wolves and sheep
+  ask item 0 startingPos [sprout-wolves 1 [set color brown]]
+;  ask item 1 startingPos [sprout-wolves 1 [set color black]]
+;  ask item 2 startingPos [sprout-wolves 1 [set color gray]]
+;  ask item 3 startingPos [sprout-wolves 1 [set color white - 2.0]]
+  ask item 4 startingPos [sprout-sheeps 1 [set color white - 2.0]]
+  if SHOW-RANGE [
+    ask wolves [
+      make-range-squares
+    ]
+  ]
+
+  ask wolves [
+    set total-reward 0
+    set reward 0
+    set previous-sheep-pos false
+    set previous-wolf-pos false
+    set Q-values1 get-initial-Q-values
+  ]
+end
+
+to setup-world
+  resize-world 0 (WORLD-SIZE - 1) 0 (WORLD-SIZE - 1)
+  ask patches [
+    ifelse (world-grid)
+      [ifelse (pxcor + pycor) mod 2 = 0
+        [set pcolor 9.9]
+        [set pcolor 9.8]
+      ]
+      [set pcolor 9.9]
+  ]
+end
+
+to setup-globals
+  set GAME-OVER false
+  set time-steps 0
+  set episode-count 0
+  set epsilon 1
+  set game-over-reward 1
+  set neutral-reward -0.1
+  ;set temperature 100
+
+  ; defines list of actions as (x y) move increments
+  set ACTION-LIST (list
+    list 0 0    ; no-move
+    list 0 1    ; N north
+    list 0 -1   ; S south
+    list 1 0    ; E east
+    list -1 0   ; W west
+    )
+
+  ; defines the number of available actions from above
+  set NUM-ACTIONS 5
+
+  if WOLVES-DIAGONALS
+  [
+    set ACTION-LIST (sentence ACTION-LIST (list
+      list 1 1    ; NE northeast
+      list 1 -1   ; SE southeast
+      list -1 1   ; NW northwest
+      list -1 -1  ; SW southwest
+      ))
+
+    set NUM-ACTIONS 9
+  ]
+end
+
+to make-range-squares
+  hatch-visualsqrs 1 [
+    set size 2 * VISIBLE-RANGE + 1
+    set color lput 64 extract-rgb color
+    __set-line-thickness 0.05
+    create-link-from myself [
+      tie
+      hide-link
+    ]
+  ]
+end
